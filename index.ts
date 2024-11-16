@@ -3,11 +3,17 @@ import { Request, Response } from "express";
 import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
+import mongoose from 'mongoose';
+import Project from "./models/user";
 
 const app = express();
-const port = 3000;
+const port = 3001;
 
 app.use(express.json()); // Middleware to parse JSON bodies
+
+mongoose.connect("mongodb+srv://nrgsidhu:test123@cluster0.on4vu.mongodb.net/")
+  .then(() => { console.log("Connected to MongoDB") })
+  .catch((err) => console.log(err))
 
 // Root directory for all user projects
 const projectsRoot = path.join(__dirname, "projects");
@@ -16,15 +22,11 @@ const projectsRoot = path.join(__dirname, "projects");
 app.post("/create-project", async (req: Request, res: Response): Promise<any> => {
   const uniqueProjectId = uuidv4();
   const uniqueProjectName = `node-project-${uniqueProjectId}`;
-  const projectPath = path.join(projectsRoot, uniqueProjectName);
 
   // Extract custom folders and files from request body
   const { folders = [], files = [] } = req.body;
 
-  // Create a unique project directory
-  fs.mkdirSync(projectPath, { recursive: true });
-
-  // Create default package.json
+  // Create the default package.json content
   const packageJson = {
     name: uniqueProjectName,
     version: "1.0.0",
@@ -33,54 +35,58 @@ app.post("/create-project", async (req: Request, res: Response): Promise<any> =>
       start: "node index.js"
     }
   };
-  fs.writeFileSync(
-    path.join(projectPath, "package.json"),
-    JSON.stringify(packageJson, null, 2)
-  );
 
-  // Create custom folders
-  folders.forEach((folder: string) => {
-    const folderPath = path.join(projectPath, folder);
-    fs.mkdirSync(folderPath, { recursive: true });
-  });
+  try {
+    // Create a new Project instance with the provided data
+    const project = new Project({
+      projectId: uniqueProjectId,
+      name: uniqueProjectName,
+      folders: folders,
+      files: [
+        ...files,
+        {
+          name: "package.json",
+          content: JSON.stringify(packageJson, null, 2)
+        }
+      ]
+    });
 
-  // Create custom files
-  files.forEach(({ name, content, folder = "" }: { name: string; content: string; folder?: string }) => {
-    const filePath = path.join(projectPath, folder, name);
-    fs.mkdirSync(path.dirname(filePath), { recursive: true });
-    fs.writeFileSync(filePath, content || "");
-  });
+    // Save the project to MongoDB
+    await project.save();
 
-  // Send response
-  return res.json({ message: "Project created successfully", projectId: uniqueProjectId });
+    // Return success response
+    return res.json({ message: "Project created successfully", projectId: uniqueProjectId });
+  } catch (error) {
+    console.error("Error saving project to database:", error);
+    return res.status(500).json({ error: "Failed to create project" });
+  }
 });
 
 // API to update an existing project by ID
 app.post("/update-project/:projectId", async (req: Request, res: Response): Promise<any> => {
   const { projectId } = req.params;
-  const projectPath = path.join(projectsRoot, `node-project-${projectId}`);
 
-  if (!fs.existsSync(projectPath)) {
-    return res.status(404).json({ error: "Project not found" });
-  }
-
-  // Extract folders and files to update from request body
+  // Extract folders and files to update from the request body
   const { folders = [], files = [] } = req.body;
 
-  // Create or update specified folders
-  folders.forEach((folder: string) => {
-    const folderPath = path.join(projectPath, folder);
-    fs.mkdirSync(folderPath, { recursive: true });
-  });
+  try {
+    // Find the project in the database
+    const project = await Project.findOne({ projectId });
 
-  // Create or update specified files
-  files.forEach(({ name, content, folder = "" }: { name: string; content: string; folder?: string }) => {
-    const filePath = path.join(projectPath, folder, name);
-    fs.mkdirSync(path.dirname(filePath), { recursive: true });
-    fs.writeFileSync(filePath, content || "");
-  });
+    if (!project) {
+      return res.status(404).json({ error: "Project not found in database" });
+    }
 
-  return res.json({ message: "Project updated successfully" });
+    // Update folders and files in the database
+    project.folders = [...project.folders, ...folders]; // Replace with the new folder list
+    project.files = [...project.files, ...files];     // Replace with the new file list
+    await project.save();
+
+    return res.json({ message: "Project updated successfully", project });
+  } catch (error) {
+    console.error("Error updating project:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 
