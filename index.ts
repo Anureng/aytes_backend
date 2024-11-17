@@ -5,6 +5,7 @@ import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import mongoose from 'mongoose';
 import Project from "./models/user";
+import jwt from "jsonwebtoken";
 
 const app = express();
 const port = 3001;
@@ -14,6 +15,9 @@ app.use(express.json()); // Middleware to parse JSON bodies
 mongoose.connect("mongodb+srv://nrgsidhu:test123@cluster0.on4vu.mongodb.net/")
   .then(() => { console.log("Connected to MongoDB") })
   .catch((err) => console.log(err))
+
+
+const token = "AJHBDJKADJKGJKSWFKJKEGFGKFGKKGEFKJGFJKGKJSJKFKJKFJKFJKVJKKJVDJKFCJKFJKFJKFJKBFSJKFJKFJKFJKB"
 
 // Root directory for all user projects
 const projectsRoot = path.join(__dirname, "projects");
@@ -88,6 +92,59 @@ app.post("/update-project/:projectId", async (req: Request, res: Response): Prom
     return res.status(500).json({ error: "Internal server error" });
   }
 });
+
+app.post("/createUser", async (req: Request, res: Response): Promise<any> => {
+  const { name, email, password } = req.body;
+  try {
+    const data = new Project({
+      name: name,
+      email: email,
+      password: password
+    })
+    await data.save();
+    const getToken = jwt.sign({ email: data.email, id: data.id }, token, { expiresIn: "3d" })
+    return res.json({ message: "User created successfully", token: getToken })
+  } catch (error) {
+    return res.status(500).json({ error: "Internal server error" })
+  }
+})
+
+app.post("/login", async (req: Request, res: Response): Promise<any> => {
+  const { email, password } = req.body;
+  try {
+    const findData = await Project.findOne(email)
+    if (!findData) {
+      return res.status(404).json({ error: "User not found" })
+    }
+
+    if (findData.password !== password && findData.email !== email) {
+      return res.status(401).json({ error: "Invalid credentials" })
+    }
+    const data = new Project({
+      email: email,
+      password: password
+    })
+    await data.save();
+    return res.json({ message: "User created successfully" })
+  } catch (error) {
+    return res.status(500).json({ error: "Internal server error" })
+  }
+})
+
+app.post("/auth", async (req: Request, res: Response): Promise<any> => {
+  const token = req.header("Authorization")?.replace("Bearer ", "");
+  try {
+
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized" })
+    }
+
+    const decoded = jwt.verify(token, token)
+    return res.json({ message: "User created successfully" })
+  } catch (error) {
+    return res.status(500).json({ error: "Internal server error" })
+  }
+})
 
 
 app.listen(port, () => {
