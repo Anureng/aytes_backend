@@ -6,11 +6,13 @@ import { v4 as uuidv4 } from "uuid";
 import mongoose from 'mongoose';
 import Project from "./models/user";
 import jwt from "jsonwebtoken";
+import cors from "cors";
 
 const app = express();
 const port = 3001;
 
 app.use(express.json()); // Middleware to parse JSON bodies
+app.use(cors())
 
 mongoose.connect("mongodb+srv://nrgsidhu:test123@cluster0.on4vu.mongodb.net/")
   .then(() => { console.log("Connected to MongoDB") })
