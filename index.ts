@@ -139,8 +139,10 @@ app.post("/auth", async (req: Request, res: Response): Promise<any> => {
       return res.status(401).json({ error: "Unauthorized" })
     }
 
-    const decoded = jwt.verify(token, token)
-    return res.json({ message: "User created successfully" })
+    const verify = jwt.verify(token, token);
+
+    const decoded = jwt.decode(verify as string);
+    return res.json({ message: "User created successfully", decoded: decoded })
   } catch (error) {
     return res.status(500).json({ error: "Internal server error" })
   }
