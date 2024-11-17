@@ -96,6 +96,11 @@ app.post("/update-project/:projectId", async (req: Request, res: Response): Prom
 app.post("/createUser", async (req: Request, res: Response): Promise<any> => {
   const { name, email, password } = req.body;
   try {
+
+    const findData = await Project.findOne({ email })
+    if (findData) {
+      return res.status(400).json({ error: "User already exists" })
+    }
     const data = new Project({
       projectId: uuidv4(),
       name: name,
