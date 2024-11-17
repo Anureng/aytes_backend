@@ -4,6 +4,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 interface IProject extends Document {
     projectId: string;
     name: string;
+    projectName: string;
     email: string;
     password: string;
     folders: string[];
@@ -14,6 +15,7 @@ interface IProject extends Document {
 const projectSchema = new Schema<IProject>({
     projectId: { type: String, sparse: true, unique: true },
     name: { type: String },
+    projectName: { type: String },
     email: { type: String },
     password: { type: String },
     folders: { type: [String], default: [] },

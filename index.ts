@@ -30,7 +30,11 @@ app.post("/create-project", async (req: Request, res: Response): Promise<any> =>
   const uniqueProjectName = `node-project-${uniqueProjectId}`;
 
   // Extract custom folders and files from request body
-  const { folders = [], files = [] } = req.body;
+  const { folders = [], files = [], email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
+  }
 
   // Create the default package.json content
   const packageJson = {
@@ -43,28 +47,34 @@ app.post("/create-project", async (req: Request, res: Response): Promise<any> =>
   };
 
   try {
-    // Create a new Project instance with the provided data
-    const project = new Project({
-      projectId: uniqueProjectId,
-      name: uniqueProjectName,
-      folders: folders,
-      files: [
-        ...files,
-        {
-          name: "package.json",
-          content: JSON.stringify(packageJson, null, 2)
+    // Find and update the existing project
+    const updatedProject = await Project.findOneAndUpdate(
+      { email }, // You can also use a project ID or other unique identifier here
+      {
+        $set: {
+          projectName: uniqueProjectName,
+          folders: folders,
+          files: [
+            ...files,
+            {
+              name: "package.json",
+              content: JSON.stringify(packageJson, null, 2)
+            }
+          ]
         }
-      ]
-    });
+      },
+      { new: true } // Option to return the updated document
+    );
 
-    // Save the project to MongoDB
-    await project.save();
+    if (!updatedProject) {
+      return res.status(404).json({ error: "Project not found" });
+    }
 
-    // Return success response
-    return res.json({ message: "Project created successfully", projectId: uniqueProjectId });
+    // Return success response with the updated project
+    return res.json({ message: "Project updated successfully", project: updatedProject });
   } catch (error) {
-    console.error("Error saving project to database:", error);
-    return res.status(500).json({ error: "Failed to create project" });
+    console.error("Error updating project in database:", error);
+    return res.status(500).json({ error: "Failed to update project" });
   }
 });
 
