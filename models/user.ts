@@ -12,7 +12,7 @@ interface IProject extends Document {
 
 // Define the schema for the Project model
 const projectSchema = new Schema<IProject>({
-    projectId: { type: String, unique: true },
+    projectId: { type: String, sparse: true, unique: true },
     name: { type: String },
     email: { type: String },
     password: { type: String },

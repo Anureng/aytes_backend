@@ -97,6 +97,7 @@ app.post("/createUser", async (req: Request, res: Response): Promise<any> => {
   const { name, email, password } = req.body;
   try {
     const data = new Project({
+      projectId: uuidv4(),
       name: name,
       email: email,
       password: password
@@ -112,24 +113,28 @@ app.post("/createUser", async (req: Request, res: Response): Promise<any> => {
 app.post("/login", async (req: Request, res: Response): Promise<any> => {
   const { email, password } = req.body;
   try {
-    const findData = await Project.findOne(email)
+    // Find user by email
+    const findData = await Project.findOne({ email });
     if (!findData) {
-      return res.status(404).json({ error: "User not found" })
+      return res.status(404).json({ error: "User not found" });
     }
 
-    if (findData.password !== password && findData.email !== email) {
-      return res.status(401).json({ error: "Invalid credentials" })
+    // Check if the password matches
+    if (findData.password !== password) {
+      return res.status(401).json({ error: "Invalid credentials" });
     }
-    const data = new Project({
-      email: email,
-      password: password
-    })
-    await data.save();
-    return res.json({ message: "User created successfully" })
+
+    // Generate a token (you can use jwt for this)
+    const token = jwt.sign({ email: findData.email, id: findData._id }, "secret_key", {
+      expiresIn: "3d",
+    });
+
+    return res.json({ message: "Login successful", token });
   } catch (error) {
-    return res.status(500).json({ error: "Internal server error" })
+    return res.status(500).json({ error: "Internal server error" });
   }
-})
+});
+
 
 app.post("/auth", async (req: Request, res: Response): Promise<any> => {
   const token = req.header("Authorization")?.replace("Bearer ", "");
