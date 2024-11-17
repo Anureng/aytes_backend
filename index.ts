@@ -105,7 +105,7 @@ app.post("/createUser", async (req: Request, res: Response): Promise<any> => {
     const getToken = jwt.sign({ email: data.email, id: data.id }, token, { expiresIn: "3d" })
     return res.json({ message: "User created successfully", token: getToken })
   } catch (error) {
-    return res.status(500).json({ error: "Internal server error" })
+    return res.status(500).json({ error: error })
   }
 })
 
