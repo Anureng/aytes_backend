@@ -12,7 +12,10 @@ const app = express();
 const port = 3001;
 
 app.use(express.json()); // Middleware to parse JSON bodies
-app.use(cors())
+const corsOption = {
+  origin: ["http://localhost:3000", "https://aytes.vercel.app"]
+}
+app.use(cors(corsOption))
 
 mongoose.connect("mongodb+srv://nrgsidhu:test123@cluster0.on4vu.mongodb.net/")
   .then(() => { console.log("Connected to MongoDB") })
