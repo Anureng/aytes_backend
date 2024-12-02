@@ -22,7 +22,7 @@ mongoose.connect("mongodb+srv://nrgsidhu:test123@cluster0.on4vu.mongodb.net/")
   .catch((err) => console.log(err))
 
 
-const token = "AJHBDJKADJKGJKSWFKJKEGFGKFGKKGEFKJGFJKGKJSJKFKJKFJKFJKVJKKJVDJKFCJKFJKFJKFJKBFSJKFJKFJKFJKB"
+const tokeni = "AJHBDJKADJKGJKSWFKJKEGFGKFGKKGEFKJGFJKGKJSJKFKJKFJKFJKVJKKJVDJKFCJKFJKFJKFJKBFSJKFJKFJKFJKB"
 
 // Root directory for all user projects
 const projectsRoot = path.join(__dirname, "projects");
@@ -123,7 +123,7 @@ app.post("/createUser", async (req: Request, res: Response): Promise<any> => {
       password: password
     })
     await data.save();
-    const getToken = jwt.sign({ email: data.email, id: data.id }, token, { expiresIn: "3d" })
+    const getToken = jwt.sign({ email: data.email, id: data.id }, tokeni, { expiresIn: "3d" })
     return res.json({ message: "User created successfully", token: getToken })
   } catch (error) {
     return res.status(500).json({ error: error })
@@ -145,7 +145,7 @@ app.post("/login", async (req: Request, res: Response): Promise<any> => {
     }
 
     // Generate a token (you can use jwt for this)
-    const token = jwt.sign({ email: findData.email, id: findData._id }, "secret_key", {
+    const token = jwt.sign({ email: findData.email, id: findData._id }, tokeni, {
       expiresIn: "3d",
     });
 
@@ -164,12 +164,12 @@ app.post("/auth", async (req: Request, res: Response): Promise<any> => {
       return res.status(401).json({ error: "Unauthorized" })
     }
 
-    const verify = jwt.verify(token, token);
+    const verify = jwt.verify(token, tokeni);
 
     const decoded = jwt.decode(verify as string);
     return res.json({ message: "User created successfully", decoded: decoded })
   } catch (error) {
-    return res.status(500).json({ error: "Internal server error" })
+    return res.status(500).json({ error })
   }
 })
 
