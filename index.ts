@@ -164,10 +164,14 @@ app.post("/auth", async (req: Request, res: Response): Promise<any> => {
       return res.status(401).json({ error: "Unauthorized" })
     }
 
+    const decoded = jwt.decode(token) as string;
     const verify = jwt.verify(token, tokeni);
 
-    const decoded = jwt.decode(verify as string);
-    return res.json({ message: "User created successfully", decoded: decoded })
+    if (!verify) {
+      return res.status(500).json("not verify")
+    }
+
+    return res.json({ message: "User created successfully", decoded })
   } catch (error) {
     return res.status(500).json({ error })
   }
