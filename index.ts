@@ -32,27 +32,35 @@ app.post("/create-project", async (req: Request, res: Response): Promise<any> =>
   const uniqueProjectId = uuidv4();
   const uniqueProjectName = `node-project-${uniqueProjectId}`;
 
-  // Extract custom folders and files from request body
+  // Extract custom folders and files from the request body
   const { folders = [], files = [], email } = req.body;
 
+  // Validate email presence
   if (!email) {
     return res.status(400).json({ error: "Email is required" });
   }
 
-  // Create the default package.json content
-  const packageJson = {
-    name: uniqueProjectName,
-    version: "1.0.0",
-    main: "index.js",
-    scripts: {
-      start: "node index.js"
-    }
-  };
-
   try {
-    // Find and update the existing project
+    // Check if a project exists for the given email
+    const existingProject = await Project.findOne({ email });
+
+    if (!existingProject) {
+      return res.status(404).json({ error: "User or project not found" });
+    }
+
+    // Create the default package.json content
+    const packageJson = {
+      name: uniqueProjectName,
+      version: "1.0.0",
+      main: "index.js",
+      scripts: {
+        start: "node index.js",
+      },
+    };
+
+    // Update the existing project
     const updatedProject = await Project.findOneAndUpdate(
-      { email }, // You can also use a project ID or other unique identifier here
+      { email },
       {
         $set: {
           projectName: uniqueProjectName,
@@ -61,23 +69,22 @@ app.post("/create-project", async (req: Request, res: Response): Promise<any> =>
             ...files,
             {
               name: "package.json",
-              content: JSON.stringify(packageJson, null, 2)
-            }
-          ]
-        }
+              content: JSON.stringify(packageJson, null, 2),
+            },
+          ],
+        },
       },
-      { new: true } // Option to return the updated document
+      { new: true } // Return the updated document
     );
 
-    if (!updatedProject) {
-      return res.status(404).json({ error: "Project not found" });
-    }
-
-    // Return success response with the updated project
-    return res.json({ message: "Project updated successfully", project: updatedProject });
+    // Respond with the updated project
+    return res.json({
+      message: "Project updated successfully",
+      project: updatedProject,
+    });
   } catch (error) {
     console.error("Error updating project in database:", error);
-    return res.status(500).json({ error: "Failed to update project" });
+    return res.status(500).json({ error: "An unexpected error occurred while updating the project" });
   }
 });
 
