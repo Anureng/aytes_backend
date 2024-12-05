@@ -162,6 +162,19 @@ app.post("/login", async (req: Request, res: Response): Promise<any> => {
   }
 });
 
+app.get("/getData/:id", async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { id } = req.params
+    const getData = await Project.findById(id)
+    if (!getData) {
+      return res.status(400).json("First Create User")
+    }
+    return res.status(200).json(getData)
+  } catch (error) {
+    return res.status(500).json(error)
+  }
+})
+
 
 app.post("/auth", async (req: Request, res: Response): Promise<any> => {
   const token = req.header("Authorization")?.replace("Bearer ", "");
