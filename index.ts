@@ -13,7 +13,7 @@ const port = 3001;
 
 app.use(express.json()); // Middleware to parse JSON bodies
 const corsOption = {
-  origin: ["http://localhost:3000", "https://aytes.vercel.app"]
+  origin: ["http://localhost:3000", "https://aytes.vercel.app", "https://aytes.vercel.app/test"]
 }
 app.use(cors(corsOption))
 
@@ -111,7 +111,7 @@ app.post("/update-project/:projectId", async (req: Request, res: Response): Prom
     return res.json({ message: "Project updated successfully", project });
   } catch (error) {
     console.error("Error updating project:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error });
   }
 });
 
