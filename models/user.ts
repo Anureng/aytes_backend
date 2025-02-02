@@ -1,25 +1,34 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 // Interface for the Project document
-interface IUser extends Document {
+interface IProject extends Document {
     projectId: string;
     name: string;
     projectName: string;
     email: string;
     password: string;
-    project: [string]
+    folders: string[];
+    files: { name: string; content: string; folder?: string }[];
 }
 
 // Define the schema for the Project model
-const userSchema = new Schema<IUser>({
+const projectSchema = new Schema<IProject>({
+    projectId: { type: String, sparse: true, unique: true },
     name: { type: String },
     projectName: { type: String },
     email: { type: String },
     password: { type: String },
-    project: { type: [String] },
+    folders: { type: [String], default: [] },
+    files: [
+        {
+            name: { type: String, required: true },
+            content: { type: String, required: true },
+            folder: { type: String, default: '' },
+        },
+    ],
 }, { timestamps: true });
 
 // Create the Project model
-const User = mongoose.model<IUser>('User', userSchema);
+const Project = mongoose.model<IProject>('Project', projectSchema);
 
-export default User;
+export default Project;

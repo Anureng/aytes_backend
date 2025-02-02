@@ -4,13 +4,9 @@ import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import mongoose from 'mongoose';
-import Project from "./models/project";
-import User from "./models/user";
+import Project from "./models/user";
 import jwt from "jsonwebtoken";
 import cors from "cors";
-import { ApolloServer } from "apollo-server";
-import typeDefs from "./graphql/schema/user"
-import { resolver } from "./graphql/resolver/user"
 
 const app = express();
 const port = 3001;
@@ -123,11 +119,11 @@ app.post("/createUser", async (req: Request, res: Response): Promise<any> => {
   const { name, email, password } = req.body;
   try {
 
-    const findData = await User.findOne({ email })
+    const findData = await Project.findOne({ email })
     if (findData) {
       return res.status(400).json({ error: "User already exists" })
     }
-    const data = new User({
+    const data = new Project({
       projectId: uuidv4(),
       name: name,
       email: email,
@@ -145,7 +141,7 @@ app.post("/login", async (req: Request, res: Response): Promise<any> => {
   const { email, password } = req.body;
   try {
     // Find user by email
-    const findData = await User.findOne({ email });
+    const findData = await Project.findOne({ email });
     if (!findData) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -179,11 +175,29 @@ app.get("/getData/:id", async (req: Request, res: Response): Promise<any> => {
   }
 })
 
-const server = new ApolloServer({
-  typeDefs,
-  resolvers: resolver,
-});
 
-server.listen({ port: 3001 }).then(({ url }) => {
-  console.log(`🚀 Apollo Server ready at ${url}`);
+app.post("/auth", async (req: Request, res: Response): Promise<any> => {
+  const token = req.header("Authorization")?.replace("Bearer ", "");
+  try {
+
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized" })
+    }
+
+    const decoded = jwt.decode(token) as string;
+    const verify = jwt.verify(token, tokeni);
+
+    if (!verify) {
+      return res.status(500).json("not verify")
+    }
+
+    return res.json({ message: "User created successfully", decoded })
+  } catch (error) {
+    return res.status(500).json({ error })
+  }
+})
+
+
+app.listen(port, () => {
+  console.log(`API server running at http://localhost:${port}`);
 });
