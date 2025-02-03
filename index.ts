@@ -8,7 +8,6 @@ import jwt from "jsonwebtoken";
 import cors from "cors";
 import Project from "./models/project";
 import User from "./models/User";
-
 const app = express();
 const port = 3002;
 
