@@ -4,12 +4,13 @@ import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import mongoose from 'mongoose';
-import Project from "./models/user";
 import jwt from "jsonwebtoken";
 import cors from "cors";
+import Project from "./models/project";
+import User from "./models/User";
 
 const app = express();
-const port = 3001;
+const port = 3002;
 
 app.use(express.json()); // Middleware to parse JSON bodies
 const corsOption = {
@@ -33,24 +34,26 @@ app.post("/create-project", async (req: Request, res: Response): Promise<any> =>
   const uniqueProjectName = `node-project-${uniqueProjectId}`;
 
   // Extract custom folders and files from the request body
-  const { folders = [], files = [], email } = req.body;
+  const { folders = [], files = [], email, projectName } = req.body;
 
-  // Validate email presence
+  // ✅ Validate email presence
   if (!email) {
     return res.status(400).json({ error: "Email is required" });
   }
 
   try {
-    // Check if a project exists for the given email
-    const existingProject = await Project.findOne({ email });
-
-    if (!existingProject) {
-      return res.status(404).json({ error: "User or project not found" });
+    // ✅ Check if the user exists first
+    const existingUser = await User.findOne({ email });
+    if (!existingUser) {
+      return res.status(404).json({ error: "User not found. Please register first." });
     }
 
-    // Create the default package.json content
+    // ✅ Check if a project exists for the given email
+    let existingProject = await Project.findOne({ email });
+
+    // ✅ Create the default package.json content
     const packageJson = {
-      name: uniqueProjectName,
+      name: projectName,
       version: "1.0.0",
       main: "index.js",
       scripts: {
@@ -58,13 +61,37 @@ app.post("/create-project", async (req: Request, res: Response): Promise<any> =>
       },
     };
 
-    // Update the existing project
+    if (!existingProject) {
+      // ✅ If no project exists, create a new one
+      existingProject = new Project({
+        email,
+        projectName,
+        projectId: uniqueProjectId,
+        folders,
+        files: [
+          ...files,
+          {
+            name: "package.json",
+            content: JSON.stringify(packageJson, null, 2),
+          },
+        ],
+      });
+
+      await existingProject.save();
+      return res.status(201).json({
+        message: "New project created successfully",
+        project: existingProject,
+      });
+    }
+
+    // ✅ If project exists, update it
     const updatedProject = await Project.findOneAndUpdate(
       { email },
       {
         $set: {
-          projectName: uniqueProjectName,
-          folders: folders,
+          projectName,
+          projectId: uniqueProjectId,
+          folders,
           files: [
             ...files,
             {
@@ -74,19 +101,20 @@ app.post("/create-project", async (req: Request, res: Response): Promise<any> =>
           ],
         },
       },
-      { new: true } // Return the updated document
+      { new: true, upsert: true } // ✅ Ensures a new project is created if none exists
     );
 
-    // Respond with the updated project
-    return res.json({
+    return res.status(200).json({
       message: "Project updated successfully",
       project: updatedProject,
     });
+
   } catch (error) {
     console.error("Error updating project in database:", error);
     return res.status(500).json({ error: "An unexpected error occurred while updating the project" });
   }
 });
+
 
 // API to update an existing project by ID
 app.post("/update-project/:projectId", async (req: Request, res: Response): Promise<any> => {
@@ -119,12 +147,11 @@ app.post("/createUser", async (req: Request, res: Response): Promise<any> => {
   const { name, email, password } = req.body;
   try {
 
-    const findData = await Project.findOne({ email })
+    const findData = await User.findOne({ email })
     if (findData) {
       return res.status(400).json({ error: "User already exists" })
     }
-    const data = new Project({
-      projectId: uuidv4(),
+    const data = new User({
       name: name,
       email: email,
       password: password
@@ -141,7 +168,7 @@ app.post("/login", async (req: Request, res: Response): Promise<any> => {
   const { email, password } = req.body;
   try {
     // Find user by email
-    const findData = await Project.findOne({ email });
+    const findData = await User.findOne({ email });
     if (!findData) {
       return res.status(404).json({ error: "User not found" });
     }
