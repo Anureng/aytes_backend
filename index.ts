@@ -7,7 +7,7 @@ import mongoose from 'mongoose';
 import jwt from "jsonwebtoken";
 import cors from "cors";
 import Project from "./models/project";
-import User from "./models/User";
+import User from "./models/users";
 const app = express();
 const port = 3002;
 

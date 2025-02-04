@@ -19,7 +19,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const cors_1 = __importDefault(require("cors"));
 const project_1 = __importDefault(require("./models/project"));
-const User_1 = __importDefault(require("./models/user"));
+const users_1 = __importDefault(require("./models/users"));
 const app = (0, express_1.default)();
 const port = 3002;
 app.use(express_1.default.json()); // Middleware to parse JSON bodies
@@ -45,7 +45,7 @@ app.post("/create-project", (req, res) => __awaiter(void 0, void 0, void 0, func
     }
     try {
         // ✅ Check if the user exists first
-        const existingUser = yield User_1.default.findOne({ email });
+        const existingUser = yield users_1.default.findOne({ email });
         if (!existingUser) {
             return res.status(404).json({ error: "User not found. Please register first." });
         }
@@ -132,11 +132,11 @@ app.post("/update-project/:projectId", (req, res) => __awaiter(void 0, void 0, v
 app.post("/createUser", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { name, email, password } = req.body;
     try {
-        const findData = yield User_1.default.findOne({ email });
+        const findData = yield users_1.default.findOne({ email });
         if (findData) {
             return res.status(400).json({ error: "User already exists" });
         }
-        const data = new User_1.default({
+        const data = new users_1.default({
             name: name,
             email: email,
             password: password
@@ -153,7 +153,7 @@ app.post("/login", (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     const { email, password } = req.body;
     try {
         // Find user by email
-        const findData = yield User_1.default.findOne({ email });
+        const findData = yield users_1.default.findOne({ email });
         if (!findData) {
             return res.status(404).json({ error: "User not found" });
         }
