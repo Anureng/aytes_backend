@@ -19,7 +19,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const cors_1 = __importDefault(require("cors"));
 const project_1 = __importDefault(require("./models/project"));
-const User_1 = __importDefault(require("./models/User"));
+const User_1 = __importDefault(require("./models/user"));
 const app = (0, express_1.default)();
 const port = 3002;
 app.use(express_1.default.json()); // Middleware to parse JSON bodies
